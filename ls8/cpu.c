@@ -5,6 +5,15 @@
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
+
+char cpu_ram_read(struct cpu *cpu, unsigned int index) {
+  return cpu->ram[index];
+}
+
+void cpu_ram_write(struct cpu *cpu, unsigned int index, unsigned char data) {
+  cpu->ram[index] = data;
+} 
+
 void cpu_load(struct cpu *cpu)
 {
   char data[DATA_LEN] = {
