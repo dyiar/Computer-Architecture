@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <stdio.h>
 
 #define DATA_LEN 6
 
@@ -54,16 +55,44 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu)
 {
+  unsigned int number_of_operations = 0;
   int running = 1; // True until we get a HLT instruction
+  unsigned char operandA;
+  unsigned char operandB;
 
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
+    unsigned char command = cpu_ram_read(cpu, cpu->pc);
     // 2. Figure out how many operands this next instruction requires
+    number_of_operations = command >> 6;
     // 3. Get the appropriate value(s) of the operands following this instruction
+    operandA = cpu_ram_read(cpu, cpu->pc +1);
+    operandB = cpu_ram_read(cpu, cpu->pc +2);
     // 4. switch() over it to decide on a course of action.
     // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
+
+    
+    
+    
+
+    switch (command) {
+      case HLT:
+        running = 0;
+        break;
+
+      case LDI:
+        cpu->registers[operandA] = operandB;
+        cpu->pc += 1 + number_of_operations;
+        break;
+
+      case PRN:
+        printf("%d\n", cpu->registers[operandA]);
+        cpu->pc += 1 +number_of_operations;
+        break;
+    }
+
   }
 }
 
@@ -73,4 +102,7 @@ void cpu_run(struct cpu *cpu)
 void cpu_init(struct cpu *cpu)
 {
   // TODO: Initialize the PC and other special registers
+  cpu->pc = 0;
+  memset(cpu->ram, 0, 256 * sizeof(cpu->ram[0]));
+  memset(cpu->registers, 0, 8 * sizeof(cpu->registers[0]));
 }
