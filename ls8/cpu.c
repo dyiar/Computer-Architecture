@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #define DATA_LEN 6
 
@@ -15,25 +16,48 @@ void cpu_ram_write(struct cpu *cpu, unsigned int index, unsigned char data) {
   cpu->ram[index] = data;
 } 
 
-void cpu_load(struct cpu *cpu)
+void cpu_load(struct cpu *cpu, char *argv)
 {
-  char data[DATA_LEN] = {
-    // From print8.ls8
-    0b10000010, // LDI R0,8
-    0b00000000,
-    0b00001000,
-    0b01000111, // PRN R0
-    0b00000000,
-    0b00000001  // HLT
-  };
+  // char data[DATA_LEN] = {
+  //   // From print8.ls8
+  //   0b10000010, // LDI R0,8
+  //   0b00000000,
+  //   0b00001000,
+  //   0b01000111, // PRN R0
+  //   0b00000000,
+  //   0b00000001  // HLT
+  // };
 
-  int address = 0;
+  // int address = 0;
 
-  for (int i = 0; i < DATA_LEN; i++) {
-    cpu->ram[address++] = data[i];
-  }
+  // for (int i = 0; i < DATA_LEN; i++) {
+  //   cpu->ram[address++] = data[i];
+  // }
 
   // TODO: Replace this with something less hard-coded
+
+  char line[128];
+  FILE *fp = fopen(argv[1], "r");
+
+  if(fp == NULL) {
+    fprintf(stderr, "comp: error opening file \"%s\"\n", argv[1]);
+    exit(2);
+  }
+
+  int address = 0;
+  while (fgets(line, sizeof line, fp) != NULL){
+    char *endptr;
+
+    unsigned char val = strtoul(line, &endptr, 10);
+
+    if (endptr == line){
+      continue;
+    }
+
+    cpu->ram[address++] = val;
+    }
+
+    fclose(fp);
 }
 
 /**
