@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define DATA_LEN 6
 
@@ -16,7 +17,7 @@ void cpu_ram_write(struct cpu *cpu, unsigned int index, unsigned char data) {
   cpu->ram[index] = data;
 } 
 
-void cpu_load(struct cpu *cpu, char *argv)
+void cpu_load(struct cpu *cpu, char *file)
 {
   // char data[DATA_LEN] = {
   //   // From print8.ls8
@@ -37,10 +38,10 @@ void cpu_load(struct cpu *cpu, char *argv)
   // TODO: Replace this with something less hard-coded
 
   char line[128];
-  FILE *fp = fopen(argv[1], "r");
+  FILE *fp = fopen(file, "r");
 
   if(fp == NULL) {
-    fprintf(stderr, "comp: error opening file \"%s\"\n", argv[1]);
+    fprintf(stderr, "comp: error opening file \"%s\"\n", file);
     exit(2);
   }
 
@@ -48,7 +49,7 @@ void cpu_load(struct cpu *cpu, char *argv)
   while (fgets(line, sizeof line, fp) != NULL){
     char *endptr;
 
-    unsigned char val = strtoul(line, &endptr, 10);
+    unsigned char val = strtoul(line, &endptr, 2);
 
     if (endptr == line){
       continue;
@@ -68,6 +69,7 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
   switch (op) {
     case ALU_MUL:
       // TODO
+      cpu->registers[regA] = cpu->registers[regA] * cpu->registers[regB];
       break;
 
     // TODO: implement more ALU ops
@@ -79,7 +81,7 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu)
 {
-  unsigned int number_of_operations = 0;
+  unsigned char number_of_operations;
   int running = 1; // True until we get a HLT instruction
   unsigned char operandA;
   unsigned char operandB;
@@ -89,7 +91,7 @@ void cpu_run(struct cpu *cpu)
     // 1. Get the value of the current instruction (in address PC).
     unsigned char command = cpu_ram_read(cpu, cpu->pc);
     // 2. Figure out how many operands this next instruction requires
-    number_of_operations = command >> 6;
+    number_of_operations = (command >> 6) + 1;  // AND mask &0b11
     // 3. Get the appropriate value(s) of the operands following this instruction
     operandA = cpu_ram_read(cpu, cpu->pc +1);
     operandB = cpu_ram_read(cpu, cpu->pc +2);
@@ -108,12 +110,17 @@ void cpu_run(struct cpu *cpu)
 
       case LDI:
         cpu->registers[operandA] = operandB;
-        cpu->pc += 1 + number_of_operations;
+        cpu->pc += number_of_operations;
         break;
 
       case PRN:
         printf("%d\n", cpu->registers[operandA]);
-        cpu->pc += 1 +number_of_operations;
+        cpu->pc += number_of_operations;
+        break;
+
+      case MUL:
+        alu(cpu, ALU_MUL, operandA, operandB);
+        cpu->pc += number_of_operations;
         break;
     }
 
