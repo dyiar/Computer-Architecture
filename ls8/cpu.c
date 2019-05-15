@@ -85,6 +85,8 @@ void cpu_run(struct cpu *cpu)
   int running = 1; // True until we get a HLT instruction
   unsigned char operandA;
   unsigned char operandB;
+  // unsigned char reg_num, val;
+  // unsigned int reg_ind = 7;
 
   while (running) {
     // TODO
@@ -122,7 +124,39 @@ void cpu_run(struct cpu *cpu)
         alu(cpu, ALU_MUL, operandA, operandB);
         cpu->pc += number_of_operations;
         break;
+
+      case PUSH:
+        cpu->registers[7]--;
+        // printf("this is reg minus %d\n", cpu->registers[7]);
+        // printf("this is ram at --reg %d\n", cpu->ram[cpu->registers[7]]);
+
+        cpu_ram_write(cpu, cpu->registers[7], cpu->registers[operandA]);
+        cpu->pc += number_of_operations;
+        
+
+        // reg_num = cpu->ram[number_of_operations + 1];
+        // val = cpu->registers[reg_num];
+        // cpu->ram[cpu->registers[reg_ind]] = val;
+        // cpu->pc += number_of_operations;
+        break;
+
+      case POP:
+
+        cpu->registers[operandA] = cpu_ram_read(cpu, cpu->registers[7]);
+
+        cpu->registers[7]++;
+        // printf("this is reg plue %d\n", cpu->registers[7]);
+        // printf("this is ram at ++reg %d\n", cpu->ram[cpu->registers[7]]);
+
+         cpu->pc += number_of_operations;
+
+        // reg_num = cpu->ram[number_of_operations + 1];
+        // cpu->registers[reg_num] = cpu->ram[cpu->registers[reg_ind]];
+        // reg_ind++;
+        // cpu->pc += number_of_operations;
+        break;
     }
+    // cpu->pc += number_of_operations;
 
   }
 }
