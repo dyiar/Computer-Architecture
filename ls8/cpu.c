@@ -4,6 +4,9 @@
 #include <string.h>
 
 #define DATA_LEN 6
+#define E    0b00000001
+#define L    0b00000100
+#define G    0b00000010
 
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
@@ -73,6 +76,16 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
       break;
     case ALU_ADD:
       cpu->registers[regA] = cpu->registers[regA] + cpu->registers[regB];
+      break;
+
+    case ALU_CMP:
+      if (cpu->registers[regA] == cpu->registers[regB]) {
+        cpu->FL = E;
+      } else if (cpu->registers[regA] > cpu->registers[regB]) {
+        cpu->FL = G;
+      } else {
+        cpu->FL = L;
+      }
       break;
 
     // TODO: implement more ALU ops
@@ -147,8 +160,25 @@ void cpu_run(struct cpu *cpu)
         cpu->registers[7]++;
         break;
 
-      // case JMP:
-      //   break;
+      case JMP:
+        cpu->pc = cpu->registers[operandA] - number_of_operations;
+        break;
+      
+      case CMP:
+        alu(cpu, ALU_CMP, operandA, operandB);
+        break;
+
+      case JEQ:
+        if (cpu->FL == E) {
+          cpu->pc = cpu->registers[operandA] - number_of_operations;
+        }
+        break;
+      
+      case JNE:
+        if (cpu->FL != E) {
+          cpu->pc = cpu->registers[operandA] - number_of_operations;
+        }
+        break;
         
       case ADD:
         alu(cpu, ALU_ADD, operandA, operandB);
@@ -169,4 +199,5 @@ void cpu_init(struct cpu *cpu)
   cpu->pc = 0;
   memset(cpu->ram, 0, 256 * sizeof(cpu->ram[0]));
   memset(cpu->registers, 0, 8 * sizeof(cpu->registers[0]));
+  cpu->FL = 0;
 }
