@@ -71,6 +71,9 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
       // TODO
       cpu->registers[regA] = cpu->registers[regA] * cpu->registers[regB];
       break;
+    case ALU_ADD:
+      cpu->registers[regA] = cpu->registers[regA] + cpu->registers[regB];
+      break;
 
     // TODO: implement more ALU ops
   }
@@ -85,6 +88,7 @@ void cpu_run(struct cpu *cpu)
   int running = 1; // True until we get a HLT instruction
   unsigned char operandA;
   unsigned char operandB;
+
   // unsigned char reg_num, val;
   // unsigned int reg_ind = 7;
 
@@ -112,51 +116,46 @@ void cpu_run(struct cpu *cpu)
 
       case LDI:
         cpu->registers[operandA] = operandB;
-        cpu->pc += number_of_operations;
         break;
 
       case PRN:
         printf("%d\n", cpu->registers[operandA]);
-        cpu->pc += number_of_operations;
         break;
 
       case MUL:
         alu(cpu, ALU_MUL, operandA, operandB);
-        cpu->pc += number_of_operations;
         break;
 
       case PUSH:
         cpu->registers[7]--;
-        // printf("this is reg minus %d\n", cpu->registers[7]);
-        // printf("this is ram at --reg %d\n", cpu->ram[cpu->registers[7]]);
-
         cpu_ram_write(cpu, cpu->registers[7], cpu->registers[operandA]);
-        cpu->pc += number_of_operations;
-        
-
-        // reg_num = cpu->ram[number_of_operations + 1];
-        // val = cpu->registers[reg_num];
-        // cpu->ram[cpu->registers[reg_ind]] = val;
-        // cpu->pc += number_of_operations;
         break;
 
       case POP:
-
         cpu->registers[operandA] = cpu_ram_read(cpu, cpu->registers[7]);
-
         cpu->registers[7]++;
-        // printf("this is reg plue %d\n", cpu->registers[7]);
-        // printf("this is ram at ++reg %d\n", cpu->ram[cpu->registers[7]]);
+        break;
 
-         cpu->pc += number_of_operations;
+      case CALL:
+        cpu->registers[7]--;
+        cpu_ram_write(cpu, cpu->registers[7], cpu->pc + number_of_operations);
+        cpu->pc = cpu->registers[operandA] - number_of_operations;
+        break;
 
-        // reg_num = cpu->ram[number_of_operations + 1];
-        // cpu->registers[reg_num] = cpu->ram[cpu->registers[reg_ind]];
-        // reg_ind++;
-        // cpu->pc += number_of_operations;
+      case RET:
+        cpu->pc = cpu_ram_read(cpu, cpu->registers[7]) - number_of_operations;
+        cpu->registers[7]++;
+        break;
+
+      // case JMP:
+      //   break;
+        
+      case ADD:
+        alu(cpu, ALU_ADD, operandA, operandB);
         break;
     }
-    // cpu->pc += number_of_operations;
+    // make the increment here because some calls don't need to have it done automatically
+    cpu->pc += number_of_operations;
 
   }
 }
